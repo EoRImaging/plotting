@@ -24,7 +24,7 @@ pro compare_limits, plot_2d = plot_2d, plot_3d = plot_3d, outdir = outdir, color
   ;Pointers organized by paper: mK value, center of k bin/range in h Mpc^-1, and redshift
   ;*****************
   ;Number of papers to compare in the plot
-  n_papers=8
+  n_papers=7
   papers_array = PTRARR(n_papers,/allocate)
   name_array = STRARR(n_papers)
   symbol_array = FLTARR(n_papers)
@@ -141,51 +141,6 @@ pro compare_limits, plot_2d = plot_2d, plot_3d = plot_3d, outdir = outdir, color
   symbol_array[6] = 0 ;16
   symbol_name_array[6] = 'Step' ;'Filled Circle'
   linestyle_array[6] = 0
-
-  ;*****Li et al., 2019. In review (E-W only)
-  phaseII_short = FLTARR(3,3)
-  phaseII_short[*,0] = [9.28E3,5.59E3,2.39E3]
-  phaseII_short[*,1] = [.25,.29,.59]
-  phaseII_short[*,2] = [7.1,6.8,6.5]
-  ;
-  ;Infinities on either side of coarse channels and beginning and end. Forces the histogram step
-  ;to be of the correct x-width without plotting extra data.
-  phaseII_long_step_high_redshift = FLTARR(32,3)
-  phaseII_long_step_high_redshift[*,0] = [5.37E4,1.44E4,1.58E4,1.96E4,3.06E4,0,0,7.95E4,1.30E4,2.60E4,3.48E4,1.93E4,4.78E4,$
-    1.36E5,0,0,6.56E5,1.29E5,1.45E5,2.37E5,2.59E5,2.17E5,8.17E5,0,0,1.96E6,3.07E5,7.85E4,7.76E4,7.05E4,8.48E5,4.89E6]
-  phaseII_long_step_high_redshift[*,1] = [0.177,0.212,0.248,0.283,0.318,0.353,0.496,0.531,0.566,0.601,0.637,0.672,0.708,0.743,$
-    0.778,0.920,0.955,0.991,1.026,1.061,1.097,1.132,1.167,1.202,1.345,1.380,1.415,1.450,1.486,1.521,1.557,1.592]
-  inds = where(phaseII_long_step_high_redshift[*,0] EQ 0,n_count)
-  if n_count GT 1 then phaseII_long_step_high_redshift[inds,0] = !Values.F_INFINITY
-  phaseII_long_step_high_redshift[*,2] = [7.1,7.1,7.1,7.1,7.1,7.1,7.1,7.1,7.1,7.1,7.1,7.1,7.1,7.1,7.1,7.1,7.1,7.1,7.1,7.1,7.1,$
-    7.1,7.1,7.1,7.1,7.1,7.1,7.1,7.1,7.1,7.1,7.1]
-  ;
-  phaseII_long_step_med_redshift = FLTARR(32,3)
-  phaseII_long_step_med_redshift[*,0] = [2.57E4,9.41E3,9.74E3,1.11E4,1.50E4,0,0,5.18E4,2.5E4,2.68E4,2.81E4,3.95E4,8.04E4,1.28E5,$
-    0,0,3.82E5,1.86E5,1.98E5,1.36E5,9.92E4,1.71E5,3.95E5,0,0,1.12E6,4.16E5,3.52E5,2.08E5,3.50E5,6.46E5,1.71E6]
-  phaseII_long_step_med_redshift[*,1] = [0.181,0.217,0.253,0.289,0.325,0.361,0.506,0.542,0.579,0.615,0.651,0.687,0.723,0.759,$
-    0.795,0.94,0.976,1.012,1.049,1.085,1.121,1.157,1.193,1.229,1.374,1.410,1.446,1.481,1.519,1.555,1.591,1.627]
-  inds = where(phaseII_long_step_med_redshift[*,0] EQ 0,n_count)
-  if n_count GT 1 then phaseII_long_step_med_redshift[inds,0] = !Values.F_INFINITY
-  phaseII_long_step_med_redshift[*,2] = [6.8,6.8,6.8,6.8,6.8,6.8,6.8,6.8,6.8,6.8,6.8,6.8,6.8,6.8,6.8,6.8,6.8,6.8,6.8,6.8,6.8,$
-    6.8,6.8,6.8,6.8,6.8,6.8,6.8,6.8,6.8,6.8,6.8]
-  ;
-  phaseII_long_step_low_redshift = FLTARR(32,3)
-  phaseII_long_step_low_redshift[*,0] = [1.20E4,1.06E4,1.06E4,8.53E3,1.04E4,0,0,8.76E3,2.39E3,6.05E3,2.07E4,3.81E4,5.53E4,9.44E4,$
-    0,0,1.78E5,1.09E5,4.76E4,1.87E4,1.23E4,4.52E4,2.39E5,0,0,5.10E5,2.42E5,2.06E5,2.39E5,3.09E5,3.64E5,8.54E5]
-  phaseII_long_step_low_redshift[*,1] = [0.185,0.222,0.258,0.295,0.332,0.369,0.517,0.554,0.591,0.628,0.665,0.702,0.739,0.775,0.812,$
-    0.960,0.997,1.034,1.071,1.108,1.145,1.182,1.219,1.256,1.403,1.440,1.477,1.514,1.551,1.588,1.625,1.662]
-  inds = where(phaseII_long_step_low_redshift[*,0] EQ 0,n_count)
-  if n_count GT 1 then phaseII_long_step_low_redshift[inds,0] = !Values.F_INFINITY
-  phaseII_long_step_low_redshift[*,2] = [6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,$
-    6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5]
-  ;
-  ;**Uncomment to include
-  *papers_array[7] = [phaseII_long_step_low_redshift,phaseII_long_step_med_redshift,phaseII_long_step_high_redshift]
-  name_array[7] = 'Li, 2019 (in review)'
-  symbol_array[7] = 0 ;46
-  symbol_name_array[7] = 'Step' ;'Filled Star'
-  linestyle_array[7] = 3
 
   ;***** Metens et al., 2019. In prep
   ;mertens_2019 = transpose([72.4^2,0.075,10.1])
