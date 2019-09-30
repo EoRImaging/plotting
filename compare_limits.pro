@@ -258,10 +258,11 @@ pro compare_limits, plot_2d = plot_2d, plot_3d = plot_3d, outdir = outdir, color
         endif
 
         if symbol_name_array[papers_i] NE 'Step' then $
-          cglegend, Title=name_array[papers_i], color='grey', location=locations, psym=symbol_array[papers_i], $
-          charsize=1,Length=0,symsize=1.5 $
+          al_legend, name_array[papers_i], color='grey', pos=locations, /normal, psym=symbol_array[papers_i], $
+          charsize=1, linsize=0, box=0, symsize=1.5 $
         else $
-          cglegend, Title=name_array[papers_i],color='grey',location=locations,Length=0.025,thick=4,charsize=1,linestyle=linestyle_array[papers_i]
+          al_legend, name_array[papers_i],color='grey',pos=locations,linsize=.3,thick=4,charsize=1,$
+          linestyle=linestyle_array[papers_i],box=0,/normal
       endfor
 
       cgPS_Close,/pdf,Density=300,Resize=100.,/allow_transparent,/nomessage
