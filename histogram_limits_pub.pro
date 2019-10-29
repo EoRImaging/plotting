@@ -135,8 +135,9 @@ pro histogram_limits_pub, input_file_dir=input_file_dir, sav_file_name = sav_fil
       restore,file
 
       ;Construct k center from k edges
-      n_k=n_elements(k_edges)
-      k=(k_edges[1:(n_k-1)]+k_edges[0:(n_k-2)])/2.
+      n_k_edges=n_elements(k_edges)
+      k=(k_edges[1:(n_k_edges-1)]+k_edges[0:(n_k_edges-2)])/2.
+      n_k=n_elements(k)
 
       ;Construct power in mK^2 units
       delta=power*(k^3.)/(2.*!pi^2.)
@@ -152,9 +153,13 @@ pro histogram_limits_pub, input_file_dir=input_file_dir, sav_file_name = sav_fil
       ;expected file header:
       ;k [h Mpc^-1],P XX [Delta^2],P YY [Delta^2],xerrhigh [h Mpc^-1],xerrlow [h Mpc^-1],thermal P XX [Delta^2],thermal P YY [Delta^2]
       ;Code does not currently include x error bars
-      csv_struct = READ_CSV(csv_file, HEADER=header)
-      k = csv_struct.field1
-      n_k=n_elements(k)
+      csv_struct = READ_CSV(csv_file, HEADER=header, types='Double')
+      
+      k_edges = csv_struct.field1
+      n_k_edges=n_elements(k)
+      k=(k_edges[1:(n_k_edges-1)]+k_edges[0:(n_k_edges-2)])/2.
+      n_k=n_elements(k) 
+     
       if j EQ 0 then begin
         delta = csv_struct.field2
         dsigma = csv_struct.field6 / 2. ;Defined by default as 2 sigma
@@ -164,24 +169,36 @@ pro histogram_limits_pub, input_file_dir=input_file_dir, sav_file_name = sav_fil
       endelse
     endif
 
+    ;Some versions of CSV reader do not understand NAN or Infinity
+    nans = where(delta EQ 'NaN',n_count)
+    if n_count GT 0 then delta[nans]=0 
+    nans = where(delta EQ '-NaN',n_count)
+    if n_count GT 0 then delta[nans]=0 
+    nans = where(dsigma EQ 'Infinity',n_count)
+    if n_count GT 0 then dsigma[nans]=0 
+    dsigma = Double(dsigma)
+    delta = Double(delta)
+
     ;Erf function not defined for 0, will error
     zeros = where(dsigma EQ 0,n_count)
     if n_count GT 0 then dsigma[zeros] = !Values.F_INFINITY
     zeros = where(delta EQ 0,n_count)
     if n_count GT 0 then delta[zeros] = !Values.F_INFINITY
     i_nan = where(~finite(delta),n_count,complement=i_defined)
-    if n_count GT 0 then begin
-      delta = delta[i_defined]
-      k = k[i_defined]
-      n_k = n_elements(k)
-      dsigma = dsigma[i_defined]
-    endif
+   
+    delta_def = delta[i_defined]
+      ;k = k[i_defined]
+      ;n_k = n_elements(k)
+    dsigma_def = dsigma[i_defined]
 
     ;Construct upper limits using two sigma prior
-    limits=dsigma*(inverf(limit_percent-(1.-limit_percent)*erf((delta)/dsigma/sqrt(2)))*sqrt(2))+delta
+    limits_def=dsigma_def*(inverf(limit_percent-(1.-limit_percent)*erf((delta_def)/dsigma_def/sqrt(2)))*sqrt(2))+(delta_def)
+    limits = DBLARR(N_elements(delta))
+    limits[*] = !Values.F_NAN
+    limits[i_defined] = limits_def
 
     ;Print lowest limit to screen
-    lim=min(limits,ind)
+    lim=min(limits,ind,/NAN)
     header='#Limit: '+number_formatter(lim)+' mK^2, at k = '+number_formatter(k[ind])+' h Mpc^-1 for '+pols[j]
     print,header
 
@@ -234,15 +251,20 @@ pro histogram_limits_pub, input_file_dir=input_file_dir, sav_file_name = sav_fil
     endif
 
     ;Construct error bars. Force them to end at plot boundaries for aesthetics
-    error_low = (dsigma*2.)
-    lows = where(delta LT 0, n_count)
-    if n_count GT 0 then error_low[lows]=abs(delta[lows])
-    lows = where((abs(delta) - error_low) LT low_y_range,n_count)
-    if n_count GT 0 then error_low[lows]=abs(delta[lows])-low_y_range
+    ;error_low = (dsigma*2.)
+    ;lows = where(delta LT 0, n_count)
+    ;if n_count GT 0 then error_low[lows]=abs(delta[lows])
+    ;lows = where((abs(delta) - error_low) LT low_y_range,n_count)
+    ;if n_count GT 0 then error_low[lows]=abs(delta[lows])-low_y_range
     inds1 = where(k GT low_x_range)
     inds2 = where(k[inds1] LT high_x_range)
     k_in_plot = k[inds1[inds2]]
     delta_k=(k_in_plot[2]-k_in_plot[1])/2.
+    error_low = (dsigma[inds1[inds2]]*2.)
+    lows = where(delta[inds1[inds2]] LT 0, n_count)
+    if n_count GT 0 then error_low[lows]=abs(delta[inds1[inds2[lows]]])
+    lows = where((abs(delta[inds1[inds2]]) - error_low) LT low_y_range,n_count)
+    if n_count GT 0 then error_low[lows]=abs(delta[inds1[inds2[lows]]])-low_y_range
 
     ;Plot error bars
     for k_i=0, n_elements(k_in_plot)-2 do begin
@@ -250,7 +272,7 @@ pro histogram_limits_pub, input_file_dir=input_file_dir, sav_file_name = sav_fil
       if k_i NE 0 then delta_k_low=(-k_in_plot[k_i-1]+k_in_plot[k_i])/2. else delta_k_low = delta_k_high
 
       cgColorFill, [k_in_plot[k_i]-delta_k_low, k_in_plot[k_i]+delta_k_high, k_in_plot[k_i]+delta_k_high,k_in_plot[k_i]-delta_k_low], $
-        [limits[k_i], limits[k_i], abs(delta[k_i])-error_low[k_i],abs(delta[k_i])-error_low[k_i]], $
+        [limits[inds1[inds2[k_i]]], limits[inds1[inds2[k_i]]], abs(delta[inds1[inds2[k_i]]])-error_low[k_i],abs(delta[inds1[inds2[k_i]]])-error_low[k_i]], $
         Color='grey',/checkforfinite
     endfor
 
@@ -273,3 +295,4 @@ pro histogram_limits_pub, input_file_dir=input_file_dir, sav_file_name = sav_fil
   if keyword_set(pdf) then cgPS_Close,/pdf,Density=300,Resize=100.,/allow_transparent,/nomessage 
 end
 ; ********
+
