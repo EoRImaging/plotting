@@ -189,8 +189,6 @@ pro histogram_limits_pub, input_file_dir=input_file_dir, sav_file_name = sav_fil
     i_nan = where(~finite(delta),n_count,complement=i_defined)
    
     delta_def = delta[i_defined]
-      ;k = k[i_defined]
-      ;n_k = n_elements(k)
     dsigma_def = dsigma[i_defined]
 
     ;Construct upper limits using two sigma prior
@@ -235,13 +233,28 @@ pro histogram_limits_pub, input_file_dir=input_file_dir, sav_file_name = sav_fil
       YTICKFORMAT_use="(A1)"
     endif
 
+    
     if (j EQ 0) then begin
       ;Create plot shell without data. Add pol name and legend
       cgplot, k,limits,/xlog,/ylog,psym=10, xrange=[low_x_range,high_x_range], yrange=[low_y_range,high_y_range],ytitle=ytitle_use, $
         xtitle=xtitle_use, charsize =.8, color=upper_lim_color,thick=thickness,position=position_use,/noerase,/nodata
-      XYOuts, position_use[0]+0.2, position_use[3]+.02, 'E-W, z=7', /Normal, Alignment=0.5, Charsize=.8
-      al_legend, ['fiducial theory','95% confidence'],color=[theory_color,theory_color], pos=[.5,.89], charsize=.8, thick=thickness,$
-        linestyle=[0,2],linsize=.7, box=0, /normal
+        
+      if N_elements(pols) EQ 2 then begin    
+        XYOuts, position_use[0]+0.2, position_use[3]+.02, 'E-W, z=7', /Normal, Alignment=0.5, Charsize=.8
+        al_legend, ['fiducial theory','95% confidence'],color=[theory_color,theory_color], pos=[.5,.89], charsize=.8, thick=thickness,$
+          linestyle=[0,2],linsize=.7, box=0, /normal
+      endif else N_elements(pols) EQ 1 then begin
+        if pols EQ 'xx' then pol_name='E-W' else if pols EQ 'yy' then pol_name='N-S'
+        XYOuts, position_use[0]+0.2, position_use[3]+.02, pol_name+', z=7', /Normal, Alignment=0.5, Charsize=.8
+        if ~keyword_set(sim) then begin
+          al_legend, ['measured power','2$\sigma$ upper limit','noise level','fiducial theory','95% confidence'],$
+            color=['black',upper_lim_color,upper_lim_color,theory_color,theory_color], pos=[.1,.89], $
+            charsize=.7, thick=thickness,linestyle=[0,0,2,0,2],linsize=.8, box=0, /normal
+        endif else begin
+          al_legend, ['measured power','fiducial theory','95% confidence'],color=[upper_lim_color,theory_color,theory_color],$
+            pos=[.1,.89], charsize=.7, thick=thickness,linestyle=[0,0,2],linsize=.8, box=0, /normal      
+        endelse   
+      endif
     endif
     if (j EQ 1) then begin
       ;Create plot shell without data. Add pol name and legend
@@ -255,6 +268,7 @@ pro histogram_limits_pub, input_file_dir=input_file_dir, sav_file_name = sav_fil
         al_legend, ['measured power'],color=[upper_lim_color], pos=[.1,.89], $
           charsize=.7, thick=thickness,linestyle=[0],linsize=.8, box=0, /normal      
       endelse
+    endif
     endif
 
     ;Construct error bars. Force them to end at plot boundaries for aesthetics
