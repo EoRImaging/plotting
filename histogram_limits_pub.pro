@@ -243,7 +243,7 @@ pro histogram_limits_pub, input_file_dir=input_file_dir, sav_file_name = sav_fil
         XYOuts, position_use[0]+0.2, position_use[3]+.02, 'E-W, z=7', /Normal, Alignment=0.5, Charsize=.8
         al_legend, ['fiducial theory','95% confidence'],color=[theory_color,theory_color], pos=[.5,.89], charsize=.8, thick=thickness,$
           linestyle=[0,2],linsize=.7, box=0, /normal
-      endif else N_elements(pols) EQ 1 then begin
+      endif else if N_elements(pols) EQ 1 then begin
         if pols EQ 'xx' then pol_name='E-W' else if pols EQ 'yy' then pol_name='N-S'
         XYOuts, position_use[0]+0.2, position_use[3]+.02, pol_name+', z=7', /Normal, Alignment=0.5, Charsize=.8
         if ~keyword_set(sim) then begin
@@ -253,7 +253,7 @@ pro histogram_limits_pub, input_file_dir=input_file_dir, sav_file_name = sav_fil
         endif else begin
           al_legend, ['measured power','fiducial theory','95% confidence'],color=[upper_lim_color,theory_color,theory_color],$
             pos=[.1,.89], charsize=.7, thick=thickness,linestyle=[0,0,2],linsize=.8, box=0, /normal      
-        endelse   
+        endelse  
       endif
     endif
     if (j EQ 1) then begin
@@ -268,7 +268,6 @@ pro histogram_limits_pub, input_file_dir=input_file_dir, sav_file_name = sav_fil
         al_legend, ['measured power'],color=[upper_lim_color], pos=[.1,.89], $
           charsize=.7, thick=thickness,linestyle=[0],linsize=.8, box=0, /normal      
       endelse
-    endif
     endif
 
     ;Construct error bars. Force them to end at plot boundaries for aesthetics
