@@ -17,6 +17,7 @@
 ;; high_x_range: Highest x-axis value h Mpc^-1 (default 1.9)
 ;; theory_rgb: RGB array for the theory (default [197,120,62], brown)
 ;; upper_lim_rgb: RGB array for the upper limits (default [73, 142, 217], light blue)
+;; sim: Option to only plot the measured power, useful for simulations without noise 
 ;; pdf: Create a pdf output (default not set)
 
 ; ******** Internal inverf function
@@ -49,7 +50,8 @@ end
 ; ******** Main histogram_limits_pub plotting script
 pro histogram_limits_pub, input_file_dir=input_file_dir, sav_file_name = sav_file_name, csv_file=csv_file, pols=pols, $
   missing_inds=missing_inds, outdir = outdir, low_y_range=low_y_range, high_y_range=high_y_range, $
-  low_x_range=low_x_range, high_x_range=high_x_range, theory_rgb=theory_rgb, upper_lim_rgb=upper_lim_rgb, pdf=pdf
+  low_x_range=low_x_range, high_x_range=high_x_range, theory_rgb=theory_rgb, upper_lim_rgb=upper_lim_rgb, $
+  sim=sim, pdf=pdf
 
 
   if ~keyword_set(sav_file_name) AND ~keyword_set(csv_file) then $
@@ -246,16 +248,16 @@ pro histogram_limits_pub, input_file_dir=input_file_dir, sav_file_name = sav_fil
       cgplot, k,limits,/xlog,/ylog,psym=10, xrange=[low_x_range,high_x_range], yrange=[low_y_range,high_y_range],ytitle=ytitle_use, $
         xtitle=xtitle_use, charsize =.8, color=upper_lim_color,thick=thickness,position=position_use,YTICKFORMAT=YTICKFORMAT_use,/noerase,/nodata
       XYOuts, position_use[0]+0.2, position_use[3]+.02, 'N-S, z=7', /Normal, Alignment=0.5, Charsize=.8
-      al_legend, ['measured power','2$\sigma$ upper limit','noise level'],color=['black',upper_lim_color,upper_lim_color], pos=[.1,.89], $
-        charsize=.7, thick=thickness,linestyle=[0,0,2],linsize=.8, box=0, /normal
+      if ~keyword_set(sim) then begin
+        al_legend, ['measured power','2$\sigma$ upper limit','noise level'],color=['black',upper_lim_color,upper_lim_color], pos=[.1,.89], $
+          charsize=.7, thick=thickness,linestyle=[0,0,2],linsize=.8, box=0, /normal
+      endif else begin
+        al_legend, ['measured power'],color=[upper_lim_color], pos=[.1,.89], $
+          charsize=.7, thick=thickness,linestyle=[0],linsize=.8, box=0, /normal      
+      endelse
     endif
 
     ;Construct error bars. Force them to end at plot boundaries for aesthetics
-    ;error_low = (dsigma*2.)
-    ;lows = where(delta LT 0, n_count)
-    ;if n_count GT 0 then error_low[lows]=abs(delta[lows])
-    ;lows = where((abs(delta) - error_low) LT low_y_range,n_count)
-    ;if n_count GT 0 then error_low[lows]=abs(delta[lows])-low_y_range
     inds1 = where(k GT low_x_range)
     inds2 = where(k[inds1] LT high_x_range)
     k_in_plot = k[inds1[inds2]]
@@ -266,23 +268,32 @@ pro histogram_limits_pub, input_file_dir=input_file_dir, sav_file_name = sav_fil
     lows = where((abs(delta[inds1[inds2]]) - error_low) LT low_y_range,n_count)
     if n_count GT 0 then error_low[lows]=abs(delta[inds1[inds2[lows]]])-low_y_range
 
-    ;Plot error bars
-    for k_i=0, n_elements(k_in_plot)-2 do begin
-      delta_k_high=(k_in_plot[k_i+1]-k_in_plot[k_i])/2.
-      if k_i NE 0 then delta_k_low=(-k_in_plot[k_i-1]+k_in_plot[k_i])/2. else delta_k_low = delta_k_high
 
-      cgColorFill, [k_in_plot[k_i]-delta_k_low, k_in_plot[k_i]+delta_k_high, k_in_plot[k_i]+delta_k_high,k_in_plot[k_i]-delta_k_low], $
-        [limits[inds1[inds2[k_i]]], limits[inds1[inds2[k_i]]], abs(delta[inds1[inds2[k_i]]])-error_low[k_i],abs(delta[inds1[inds2[k_i]]])-error_low[k_i]], $
-        Color='grey',/checkforfinite
-    endfor
+    if ~keyword_set(sim) then begin
+      ;Plot error bars
+      for k_i=0, n_elements(k_in_plot)-2 do begin
+        delta_k_high=(k_in_plot[k_i+1]-k_in_plot[k_i])/2.
+        if k_i NE 0 then delta_k_low=(-k_in_plot[k_i-1]+k_in_plot[k_i])/2. else delta_k_low = delta_k_high
 
-    ;Plot limits, thermal noise, and power
-    cgoplot, [k[0]-(k[1]-k[0]),k,k[n_k-1]+(k[n_k-1]-k[n_k-2])],[!Values.F_NAN,limits,!Values.F_NAN],$
-      /xlog,/ylog,psym=10,color=upper_lim_color,thick=thickness,position=position_use
-    cgoplot, [k[0]-(k[1]-k[0]),k,k[n_k-1]+(k[n_k-1]-k[n_k-2])],[!Values.F_NAN,dsigma,!Values.F_NAN],$
-      /xlog,/ylog,psym=10,linestyle=2, color=upper_lim_color,thick=thickness,position=position_use
-    cgoplot, [k[0]-(k[1]-k[0]),k,k[n_k-1]+(k[n_k-1]-k[n_k-2])],[!Values.F_NAN,delta,!Values.F_NAN],$
-      /xlog,/ylog,color='black',psym=10,thick=thickness-1,position=position_use
+        cgColorFill, [k_in_plot[k_i]-delta_k_low, k_in_plot[k_i]+delta_k_high, k_in_plot[k_i]+delta_k_high,k_in_plot[k_i]-delta_k_low], $
+          [limits[inds1[inds2[k_i]]], limits[inds1[inds2[k_i]]], abs(delta[inds1[inds2[k_i]]])-error_low[k_i],abs(delta[inds1[inds2[k_i]]])-error_low[k_i]], $
+          Color='grey',/checkforfinite
+      endfor
+
+      ;Plot limits, thermal noise, and power
+      cgoplot, [k[0]-(k[1]-k[0]),k,k[n_k-1]+(k[n_k-1]-k[n_k-2])],[!Values.F_NAN,limits,!Values.F_NAN],$
+        /xlog,/ylog,psym=10,color=upper_lim_color,thick=thickness,position=position_use
+      cgoplot, [k[0]-(k[1]-k[0]),k,k[n_k-1]+(k[n_k-1]-k[n_k-2])],[!Values.F_NAN,dsigma,!Values.F_NAN],$
+        /xlog,/ylog,psym=10,linestyle=2, color=upper_lim_color,thick=thickness,position=position_use
+      cgoplot, [k[0]-(k[1]-k[0]),k,k[n_k-1]+(k[n_k-1]-k[n_k-2])],[!Values.F_NAN,delta,!Values.F_NAN],$
+        /xlog,/ylog,color='black',psym=10,thick=thickness-1,position=position_use
+
+    endif else begin
+      ;Just plot the power for simulation comparisons
+        cgoplot, [k[0]-(k[1]-k[0]),k,k[n_k-1]+(k[n_k-1]-k[n_k-2])],[!Values.F_NAN,delta,!Values.F_NAN],$
+          /xlog,/ylog,color=upper_lim_color,psym=10,thick=thickness-1,position=position_use
+    endelse
+
 
     ;Plot theory
     cgoplot, brad_k_2,brad_fiducial,/xlog,/ylog,color=theory_color,thick=thickness-1,position=position_use
