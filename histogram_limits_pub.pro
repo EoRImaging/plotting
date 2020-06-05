@@ -74,11 +74,11 @@ pro histogram_limits_pub, input_file_dir=input_file_dir, sav_file_name = sav_fil
     endfile='_averemove_swbh_dencorr_' + 'no_'+horizon+'deg_wedge_kperplambda'+kperp_start+'-'+kperp_end+'_kpar0.15-200_1dkpower.idlsave'
   endif else if keyword_set(sav_file_name) and ~keyword_set(csv_file) then begin
     if strmatch(sav_file_name,'*'+pols[0]+'*') then begin
-      split_strings = strsplit(sav_file_name, /EXTRACT, pols[0])
+      split_strings = sav_file_name.Split(pols[0])
       basefile = split_strings[0]
       endfile = split_strings[1]
     endif else if strmatch(sav_file_name,'*'+pols[1]+'*') then begin
-      split_strings = strsplit(sav_file_name, /EXTRACT, pols[1])
+      split_strings = sav_file_name.Split(pols[1])
       basefile = split_strings[0]
       endfile = split_strings[1]
     endif else message, 'sav_file_name does not have a polarization identifier'
@@ -241,7 +241,7 @@ pro histogram_limits_pub, input_file_dir=input_file_dir, sav_file_name = sav_fil
         
       if N_elements(pols) EQ 2 then begin    
         XYOuts, position_use[0]+0.2, position_use[3]+.02, 'E-W, z=7', /Normal, Alignment=0.5, Charsize=.8
-        al_legend, ['fiducial theory','95% confidence'],color=[theory_color,theory_color], pos=[.5,.89], charsize=.8, thick=thickness,$
+        al_legend, ['fiducial theory','95% confidence'],color=[theory_color,theory_color], pos=[.5,.89], charsize=.7, thick=thickness,$
           linestyle=[0,2],linsize=.7, box=0, /normal
       endif else if N_elements(pols) EQ 1 then begin
         if pols EQ 'xx' then pol_name='E-W' else if pols EQ 'yy' then pol_name='N-S'
